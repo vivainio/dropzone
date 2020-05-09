@@ -1,20 +1,16 @@
-import {
-    LambdaIntegration,
-    MethodLoggingLevel,
-    RestApi,
-    LambdaRestApi,
-} from "@aws-cdk/aws-apigateway"
+import { MethodLoggingLevel, RestApi, LambdaRestApi } from "@aws-cdk/aws-apigateway"
 import { PolicyStatement } from "@aws-cdk/aws-iam"
 import { Function, Runtime, AssetCode, Code } from "@aws-cdk/aws-lambda"
 import { Construct, Duration, Stack, StackProps } from "@aws-cdk/core"
-import s3 = require("@aws-cdk/aws-s3")
+import * as s3 from "@aws-cdk/aws-s3"
+
+import * as iam from "@aws-cdk/aws-iam"
 
 interface DropZoneStackProps extends StackProps {
     functionName: string
 }
 
 export class DropZoneStack extends Stack {
-    private restApi: RestApi
     private lambdaFunction: Function
     private bucket: s3.Bucket
 
@@ -23,16 +19,19 @@ export class DropZoneStack extends Stack {
 
         this.bucket = new s3.Bucket(this, "DropzoneStore")
 
+        const role = new iam.Role(this, "dzrole", {
+            assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
+        })
         /*
         RestApi(this, this.stackName + "RestApi", {
         })
         */
 
         const lambdaPolicy = new PolicyStatement()
-        lambdaPolicy.addActions("s3:ListBucket")
-        lambdaPolicy.addActions("s3:GetObject")
-
+        lambdaPolicy.addActions("s3:*")
         lambdaPolicy.addResources(this.bucket.bucketArn)
+
+        role.addToPolicy(lambdaPolicy)
 
         this.lambdaFunction = new Function(this, props.functionName, {
             functionName: props.functionName,
@@ -47,7 +46,7 @@ export class DropZoneStack extends Stack {
             initialPolicy: [lambdaPolicy],
         })
 
-        this.restApi = new LambdaRestApi(this, this.stackName + "RestApi", {
+        new LambdaRestApi(this, this.stackName + "RestApi", {
             handler: this.lambdaFunction,
             proxy: true,
             deployOptions: {

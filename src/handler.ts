@@ -2,7 +2,7 @@ import { S3 } from "aws-sdk"
 
 const bucketName = process.env.BUCKET!
 
-const signedUrlExpireSeconds = 60 * 5
+const signedUrlExpireSeconds = 604800
 
 function createSignedUrl(path: string) {
     const st = new S3()
