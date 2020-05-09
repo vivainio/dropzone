@@ -2,6 +2,17 @@ import { S3 } from "aws-sdk"
 
 const bucketName = process.env.BUCKET!
 
+const signedUrlExpireSeconds = 60 * 5
+
+function createSignedUrl(path: string) {
+    const st = new S3()
+    return st.getSignedUrlPromise("getObject", {
+        Bucket: bucketName,
+        Key: path,
+        Expires: signedUrlExpireSeconds,
+    })
+}
+
 // From https://docs.aws.amazon.com/cdk/latest/guide/serverless_example.html
 const handler = async function (event: any, context: any) {
     const S3Client = new S3()
@@ -9,27 +20,22 @@ const handler = async function (event: any, context: any) {
     try {
         var method = event.httpMethod
 
+        const path: string = event.path.substring(1)
+
         if (method === "GET") {
-            if (event.path === "/") {
-                const data = await S3Client.listObjectsV2({ Bucket: bucketName }).promise()
-                var body = {
-                    widgets: data.Contents!.map(function (e) {
-                        return e.Key
-                    }),
-                }
-                return {
-                    statusCode: 200,
-                    headers: {},
-                    body: JSON.stringify(body),
-                }
+            const url = await createSignedUrl(path)
+
+            return {
+                statusCode: 301,
+                headers: {
+                    Location: url,
+                },
             }
         }
 
-        // We only accept GET for now
         return {
             statusCode: 400,
-            headers: {},
-            body: "We only accept GET /",
+            body: event,
         }
     } catch (error) {
         const body = error.stack || JSON.stringify(error, null, 2)

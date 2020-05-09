@@ -1,4 +1,9 @@
-import { LambdaIntegration, MethodLoggingLevel, RestApi } from "@aws-cdk/aws-apigateway"
+import {
+    LambdaIntegration,
+    MethodLoggingLevel,
+    RestApi,
+    LambdaRestApi,
+} from "@aws-cdk/aws-apigateway"
 import { PolicyStatement } from "@aws-cdk/aws-iam"
 import { Function, Runtime, AssetCode, Code } from "@aws-cdk/aws-lambda"
 import { Construct, Duration, Stack, StackProps } from "@aws-cdk/core"
@@ -18,17 +23,15 @@ export class DropZoneStack extends Stack {
 
         this.bucket = new s3.Bucket(this, "DropzoneStore")
 
-        this.restApi = new RestApi(this, this.stackName + "RestApi", {
-            deployOptions: {
-                stageName: "beta",
-                metricsEnabled: true,
-                loggingLevel: MethodLoggingLevel.INFO,
-                dataTraceEnabled: true,
-            },
+        /*
+        RestApi(this, this.stackName + "RestApi", {
         })
+        */
 
         const lambdaPolicy = new PolicyStatement()
         lambdaPolicy.addActions("s3:ListBucket")
+        lambdaPolicy.addActions("s3:GetObject")
+
         lambdaPolicy.addResources(this.bucket.bucketArn)
 
         this.lambdaFunction = new Function(this, props.functionName, {
@@ -44,6 +47,15 @@ export class DropZoneStack extends Stack {
             initialPolicy: [lambdaPolicy],
         })
 
-        this.restApi.root.addMethod("GET", new LambdaIntegration(this.lambdaFunction, {}))
+        this.restApi = new LambdaRestApi(this, this.stackName + "RestApi", {
+            handler: this.lambdaFunction,
+            proxy: true,
+            deployOptions: {
+                stageName: "beta",
+                metricsEnabled: true,
+                loggingLevel: MethodLoggingLevel.INFO,
+                dataTraceEnabled: true,
+            },
+        })
     }
 }
