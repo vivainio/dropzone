@@ -16,7 +16,7 @@ export class DropZoneStack extends Stack {
     constructor(scope: Construct, id: string, props: DropZoneStackProps) {
         super(scope, id, props)
 
-        this.bucket = new s3.Bucket(this, "WidgetStore")
+        this.bucket = new s3.Bucket(this, "DropzoneStore")
 
         this.restApi = new RestApi(this, this.stackName + "RestApi", {
             deployOptions: {
