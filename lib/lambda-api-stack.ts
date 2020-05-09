@@ -4,16 +4,16 @@ import { Function, Runtime, AssetCode, Code } from "@aws-cdk/aws-lambda"
 import { Construct, Duration, Stack, StackProps } from "@aws-cdk/core"
 import s3 = require("@aws-cdk/aws-s3")
 
-interface LambdaApiStackProps extends StackProps {
+interface DropZoneStackProps extends StackProps {
     functionName: string
 }
 
-export class CDKExampleLambdaApiStack extends Stack {
+export class DropZoneStack extends Stack {
     private restApi: RestApi
     private lambdaFunction: Function
     private bucket: s3.Bucket
 
-    constructor(scope: Construct, id: string, props: LambdaApiStackProps) {
+    constructor(scope: Construct, id: string, props: DropZoneStackProps) {
         super(scope, id, props)
 
         this.bucket = new s3.Bucket(this, "WidgetStore")
